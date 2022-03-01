@@ -12,7 +12,7 @@ from transformers.activations import ACT2FN
 from seq2seq import dataset
 
 
-class BertMtchPairwise(nn.Module):
+class BertMtchMatrixWise(nn.Module):
     def __init__(self, config, margin=0.2):
         super().__init__()
         self.bert = BertModel.from_pretrained(
