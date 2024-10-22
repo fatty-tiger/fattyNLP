@@ -10,13 +10,13 @@ class BertPooler(nn.Module):
         if self.pooling == 'cls':
             out = out.last_hidden_state[:, 0]
         if self.pooling == 'last-avg':
-            last = out.last_hidden_state.transpose(1, 2)  # [batch, 768, seqlen]
-            out = torch.avg_pool1d(last, kernel_size=last.shape[-1]).squeeze(-1)  # [batch, 768]
+            last = out.last_hidden_state.transpose(1, 2)  # [batch, hidden_size, seqlen]
+            out = torch.avg_pool1d(last, kernel_size=last.shape[-1]).squeeze(-1)  # [batch, hidden_size]
         if self.pooling == 'first-last-avg':
-            first = out.hidden_states[1].transpose(1, 2)  # [batch, 768, seqlen]
-            last = out.hidden_states[-1].transpose(1, 2)  # [batch, 768, seqlen]
-            first_avg = torch.avg_pool1d(first, kernel_size=last.shape[-1]).squeeze(-1)  # [batch, 768]
-            last_avg = torch.avg_pool1d(last, kernel_size=last.shape[-1]).squeeze(-1)  # [batch, 768]
-            avg = torch.cat((first_avg.unsqueeze(1), last_avg.unsqueeze(1)), dim=1)  # [batch, 2, 768]
-            out = torch.avg_pool1d(avg.transpose(1, 2), kernel_size=2).squeeze(-1)  # [batch, 768]
+            first = out.hidden_states[1].transpose(1, 2)  # [batch, hidden_size, seqlen]
+            last = out.hidden_states[-1].transpose(1, 2)  # [batch, hidden_size, seqlen]
+            first_avg = torch.avg_pool1d(first, kernel_size=last.shape[-1]).squeeze(-1)  # [batch, hidden_size]
+            last_avg = torch.avg_pool1d(last, kernel_size=last.shape[-1]).squeeze(-1)  # [batch, hidden_size]
+            avg = torch.cat((first_avg.unsqueeze(1), last_avg.unsqueeze(1)), dim=1)  # [batch, 2, hidden_size]
+            out = torch.avg_pool1d(avg.transpose(1, 2), kernel_size=2).squeeze(-1)  # [batch, hidden_size]
         return out
