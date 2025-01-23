@@ -3,18 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class TextMatchSupInbatchLoss(nn.Module):
+class TextMatchInbatchNegLoss(nn.Module):
     """监督模式In-Batch损失"""
     def __init__(self):
-        super(TextMatchSupInbatchLoss, self).__init__()
+        super(TextMatchInbatchNegLoss, self).__init__()
         self.temperature = 0.05
     
-    def forward(self, source_pred, target_pred, y_true):
-        sim = F.cosine_similarity(source_pred.unsqueeze(1), target_pred.unsqueeze(0), dim=-1)
-        sim = sim / self.temperature
-        loss = F.cross_entropy(sim, y_true)
-        return torch.mean(loss)
-
+    def forward(self, source_pred, target_pred):
+        preds = F.cosine_similarity(source_pred.unsqueeze(1), target_pred.unsqueeze(0), dim=-1)
+        preds = preds / self.temperature
+        targets = torch.arange(source_pred.shape[0]).to(source_pred.device)
+        loss = F.cross_entropy(preds, targets, reduction='mean')
+        return loss
 
 # def simcse_unsup_loss(y_pred, device, temperature=0.1):
 #     """SimCSE无监督模式的损失函数

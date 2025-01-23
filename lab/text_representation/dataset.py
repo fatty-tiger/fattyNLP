@@ -1,7 +1,6 @@
 from torch.utils.data import Dataset
-from transformers import BertTokenizerFast
 
-from lab.utils import utils
+from utils import utils
 
 class DualEncoderDataset(Dataset):
     def __init__(self, data_fpath, tokenizer, max_len, is_train=True, max_rows=-1):
@@ -33,16 +32,20 @@ class DualEncoderDataset(Dataset):
 
 
 if __name__ == "__main__":
+    from transformers import BertTokenizerFast
     from torch.utils.data import DataLoader
     from tqdm import tqdm
 
-    train_data_fpath = ""
-    tokenizer = BertTokenizerFast.from_pretrained("")
+    train_data_fpath = "/home/jiangjie/github/fattyNLP/lab/data/sample.jsonl"
+    tokenizer = BertTokenizerFast.from_pretrained("/home/work/pretrained_models/ernie-3.0-nano-zh")
     max_len = 64
     batch_size = 4
 
     dataset = DualEncoderDataset(train_data_fpath, tokenizer, max_len)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset.collate_fn)
     for batch_idx, batch_data in enumerate(tqdm(dataloader)):
-        print(batch_data)
+        #print(batch_data)
+        print(batch_data[0]['input_ids'].shape)
+        print(batch_data[1]['input_ids'].shape)
         break
+
