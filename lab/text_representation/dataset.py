@@ -1,45 +1,48 @@
-import sys
-import logging
-import json
-import torch.nn.functional as F
+from torch.utils.data import Dataset
+from transformers import BertTokenizerFast
 
-from tqdm import tqdm
-#from .base_dataset  import BaseDataset
+from lab.utils import utils
 
+class DualEncoderDataset(Dataset):
+    def __init__(self, data_fpath, tokenizer, max_len, is_train=True, max_rows=-1):
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+        self.datas = [d for idx, d in utils.reader(data_fpath) if max_rows <= 0 or idx + 1 < max_rows]
 
-class DualEncoderDataset(BaseDataset):
-    def __init__(self, args):
-        super(DualEncoderDataset, self).__init__(args)
+    def __len__(self):
+        return len(self.datas)
 
-    def load_features(self, datas, tokenizer, max_len, mode='train',
-                      limits=-1, disable_tqdm=True, **kwargs):
-        limits = len(datas) + 1 if limits <= 0 else limits
-        logging.info("Start to load data...")
-        features = []
-        for idx, d in enumerate(tqdm(datas, disable=disable_tqdm)):
-            if idx >= limits:
-                break
-            if mode == 'train':
-                feed_dict_a = tokenizer(d["text_a"], max_length=max_len, add_special_tokens=True, 
-                                        padding='max_length', return_tensors='pt', truncation=True,
-                                        return_attention_mask=True, return_token_type_ids=False)
-                feed_dict_b = tokenizer(d["text_b"], max_length=max_len, add_special_tokens=True, 
-                                        padding='max_length', return_tensors='pt', truncation=True,
-                                        return_attention_mask=True, return_token_type_ids=False)
-                features.append((feed_dict_a, feed_dict_b))
-            else:
-                feed_dict_a = tokenizer(d["text_a"], max_length=max_len, add_special_tokens=True, 
-                                        padding='max_length', return_tensors='pt', truncation=True,
-                                        return_attention_mask=True, return_token_type_ids=False)
-                features.append(feed_dict_a)
-        logging.info(f"Data loaded success, {len(features)} lines total")
-        return features
+    def __getitem__(self, idx):
+        return self.datas[idx]
+
+    def collate_fn(self, batch):
+        texts_a = []
+        texts_b = []
+        for x in batch:
+            texts_a.append(x['text_a'])
+            texts_b.append(x['text_b'])
+        
+        feed_dict_a = self.tokenizer(texts_a, max_length=self.max_len, add_special_tokens=True,
+                                     padding='max_length', return_tensors='pt', truncation=True,
+                                     return_attention_mask=True, return_token_type_ids=False)
+        feed_dict_b = self.tokenizer(texts_b, max_length=self.max_len, add_special_tokens=True,
+                                     padding='max_length', return_tensors='pt', truncation=True,
+                                     return_attention_mask=True, return_token_type_ids=False)
+        
+        return feed_dict_a, feed_dict_b
 
 
-class JsonlDualEncoderDataset(DualEncoderDataset):
-    def __init__(self, args):
-        super(JsonlDualEncoderDataset, self).__init__(args)
+if __name__ == "__main__":
+    from torch.utils.data import DataLoader
+    from tqdm import tqdm
 
-    def line_processor(self, input_line, **kwargs):
-        d = json.loads(input_line)
-        return d
+    train_data_fpath = ""
+    tokenizer = BertTokenizerFast.from_pretrained("")
+    max_len = 64
+    batch_size = 4
+
+    dataset = DualEncoderDataset(train_data_fpath, tokenizer, max_len)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=dataset.collate_fn)
+    for batch_idx, batch_data in enumerate(tqdm(dataloader)):
+        print(batch_data)
+        break

@@ -1,10 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# from ..common.register import RegisterSet
 
 
-#@RegisterSet.losses.register
 class TextMatchSupInbatchLoss(nn.Module):
     """监督模式In-Batch损失"""
     def __init__(self):
